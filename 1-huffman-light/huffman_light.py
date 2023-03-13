@@ -107,24 +107,26 @@ def encodage(dico,fichier) :
             else:
                 res = res + dico["NEXIST"]
                 encoded_char = char.encode('utf-8')
-                res = res + bytes_to_binary(encoded_char)
+                res = res + bytes_to_binary(encoded_char).zfill(8)
+                print(len(bytes_to_binary(encoded_char).zfill(8)))
 
     if len(res) % 8 != 0:
-        res = res + '0' * (len(res) % 8)
+        res = res + ('0' * (len(res) % 8) )
 
-    to_encode = bytearray()
+    to_encode = []
+
     for i in range(0, len(res) // 8):
-        to_encode.append(int(res[8*i:8*i+1],2))
+        n = int(res[8*i:8*(i+1)],2)
+        to_encode.append(n)
 
     with open("leHorlaEncoded.txt", "wb") as f:
-        f.write(to_encode)
+        f.write(bytes(to_encode))
 
     return "leHorlaEncoded.txt"
 
 
 ###  Ex.4  décodage d'un fichier compresse
 def decode_arbre(root, binary_string):
-    #FIXME
     node = root
     for bit in binary_string:
         if bit == '0':
@@ -139,33 +141,37 @@ def decode_arbre(root, binary_string):
         return node.lettre
 
 def read_utf8_char(binary_string):
+    print(binary_string)
     # Calculate the number of bytes needed to represent the character
     num_bytes = 1
     for i in range(1, 5):
         if (ord(binary_string[0]) & (0xff >> i)) == (0xff << (8 - i)):
             num_bytes = i
             break
-
+    print(f"Longueur à décoder : {num_bytes}")
     # Extract the character bytes from the binary string
-    char_bytes = binary_string[:num_bytes]
-
+    char_bytes = binary_string[:num_bytes*8]
+    print(f"Décodage de {char_bytes}")
+    num = int(char_bytes, 2)  # convert binary string to integer
+    char = chr(num) # convert integer to character
     # Convert the character bytes to a Unicode string
-    return (char_bytes.decode('utf-8'),num_bytes)
+    return (char,num_bytes)
 def decodage(arbre,fichierCompresse) :
     res = ""
     with open(fichierCompresse, "rb") as f:
-        file_data = bytearray(f.read())
-
+        file_data = bytes(f.read())
         # Convert byte array to binary string
     binary_string = ""
     for byte in file_data:
-        binary_string += format(byte, "08b")
+        binary_string = binary_string + bin(byte)[2:].zfill(8)
 
+    print(binary_string)
     while len(binary_string) > 0:
         to_decode = ""
         to_decode = to_decode + binary_string[0]
         binary_string = binary_string[1:]
         decoded = decode_arbre(arbre,to_decode)
+        print(f"Binary string head is {binary_string[:20]}")
 
         #Tant que la série de bits à décoder ne correspond pas à un caractère valide, on rajoute un bit à la séquence
         while decoded is None:
@@ -175,11 +181,12 @@ def decodage(arbre,fichierCompresse) :
             decoded = decode_arbre(arbre,to_decode)
 
             if decoded == "NEXIST":
+                print(f"Found {decoded} : {to_decode}")
                 character, num_bytes = read_utf8_char(binary_string)
+                print(f"Decoded UTF8 character : {character}, {num_bytes} bytes long")
                 res = res + character
-                binary_string = binary_string[num_bytes-1:]
+                binary_string = binary_string[(num_bytes*8):]
 
             elif decoded is not None:
                 res = res + decoded
-
     return res
