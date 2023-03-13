@@ -13,13 +13,13 @@ caracteres = [
     ' ', 'a', 'b', 'c', 'd', 'e', 'f',
     'g', 'h', 'i', 'j', 'k', 'l', 'm',
     'n', 'o', 'p', 'q', 'r', 's', 't',
-    'u', 'v', 'w', 'x', 'y', 'z', "NEXIST" ]
+    'u', 'v', 'w', 'x', 'y', 'z', "NEXIST", "EOF"]
 
 proba = [
     0.1835, 0.0640, 0.0064, 0.0259, 0.0260, 0.1486, 0.0078,
     0.0083, 0.0061, 0.0591, 0.0023, 0.0001, 0.0465, 0.0245,
     0.0623, 0.0459, 0.0256, 0.0081, 0.0555, 0.0697, 0.0572,
-    0.0506, 0.0100, 0.0000, 0.0031, 0.0021, 0.0008, 0.0002  ]
+    0.0506, 0.0100, 0.0000, 0.0031, 0.0021, 0.0008, 0.0002, 0.0000001  ]
 
 def frequences() :
     table = {}
@@ -66,14 +66,14 @@ def arbre_huffman(frequences) :
 
 ###  Ex.2  construction du code d'Huffamn
 
-def parcours(arbre,prefixe,code) :
+def parcours(arbre,prefixe,dico) :
     if arbre.gauche is None and arbre.droit is None:
         # We've reached a leaf node, so add its character and compressed value to the dictionary
-        code[arbre.lettre] = prefixe
+        dico[arbre.lettre] = prefixe
     else:
         # Traverse the left and right subtrees with the corresponding prefix values
-        parcours(arbre.gauche, prefixe + '0', code)
-        parcours(arbre.droit, prefixe + '1', code)
+        parcours(arbre.gauche, prefixe + '0', dico)
+        parcours(arbre.droit, prefixe + '1', dico)
 
 
 def code_huffman(arbre) :
@@ -84,9 +84,11 @@ def code_huffman(arbre) :
 
 ###  Ex.3  encodage d'un texte contenu dans un fichier
 
-def bytes_to_binary(bytestring):
-    hexstring = binascii.hexlify(bytestring).decode('utf-8')
-    return bin(int(hexstring, 16))[2:]
+def utf8_to_binarystring(char):
+    # format as 8-digit binary, join each byte with space
+    return ''.join([f'{i:08b}' for i in char.encode()])
+
+
 def encodage(dico,fichier) :
     raw_text = ""
     res = ""
@@ -106,9 +108,9 @@ def encodage(dico,fichier) :
                 res = res + dico[char]
             else:
                 res = res + dico["NEXIST"]
-                encoded_char = char.encode('utf-8')
-                res = res + bytes_to_binary(encoded_char).zfill(8)
-                print(len(bytes_to_binary(encoded_char).zfill(8)))
+                res = res + utf8_to_binarystring(char)
+
+    res = res + dico["EOF"]
 
     if len(res) % 8 != 0:
         res = res + ('0' * (len(res) % 8) )
@@ -119,10 +121,11 @@ def encodage(dico,fichier) :
         n = int(res[8*i:8*(i+1)],2)
         to_encode.append(n)
 
-    with open("leHorlaEncoded.txt", "wb") as f:
+
+    with open("encoded.txt", "wb") as f:
         f.write(bytes(to_encode))
 
-    return "leHorlaEncoded.txt"
+    return "encoded.txt"
 
 
 ###  Ex.4  décodage d'un fichier compresse
@@ -140,22 +143,28 @@ def decode_arbre(root, binary_string):
     else:
         return node.lettre
 
-def read_utf8_char(binary_string):
-    print(binary_string)
-    # Calculate the number of bytes needed to represent the character
-    num_bytes = 1
-    for i in range(1, 5):
-        if (ord(binary_string[0]) & (0xff >> i)) == (0xff << (8 - i)):
-            num_bytes = i
-            break
-    print(f"Longueur à décoder : {num_bytes}")
-    # Extract the character bytes from the binary string
-    char_bytes = binary_string[:num_bytes*8]
-    print(f"Décodage de {char_bytes}")
-    num = int(char_bytes, 2)  # convert binary string to integer
-    char = chr(num) # convert integer to character
-    # Convert the character bytes to a Unicode string
-    return (char,num_bytes)
+def binary_to_utf8(binary_str):
+    # Read the first byte to determine the length of the character
+    length_prefix = int(binary_str[:8], 2)
+
+    # Determine the number of bytes needed to represent the character
+    if length_prefix < 128:
+        num_bytes = 1
+    elif length_prefix < 224:
+        num_bytes = 2
+    elif length_prefix < 240:
+        num_bytes = 3
+    else:
+        num_bytes = 4
+
+    s = binary_str[:num_bytes*8]
+
+    byte_str = bytes([int(s[i:i + 8], 2) for i in range(0, len(s), 8)])
+
+    # Decode the bytes as utf8 and return the resulting string
+    return byte_str.decode('utf8'),num_bytes
+
+
 def decodage(arbre,fichierCompresse) :
     res = ""
     with open(fichierCompresse, "rb") as f:
@@ -165,13 +174,11 @@ def decodage(arbre,fichierCompresse) :
     for byte in file_data:
         binary_string = binary_string + bin(byte)[2:].zfill(8)
 
-    print(binary_string)
     while len(binary_string) > 0:
         to_decode = ""
         to_decode = to_decode + binary_string[0]
         binary_string = binary_string[1:]
         decoded = decode_arbre(arbre,to_decode)
-        print(f"Binary string head is {binary_string[:20]}")
 
         #Tant que la série de bits à décoder ne correspond pas à un caractère valide, on rajoute un bit à la séquence
         while decoded is None:
@@ -181,12 +188,12 @@ def decodage(arbre,fichierCompresse) :
             decoded = decode_arbre(arbre,to_decode)
 
             if decoded == "NEXIST":
-                print(f"Found {decoded} : {to_decode}")
-                character, num_bytes = read_utf8_char(binary_string)
-                print(f"Decoded UTF8 character : {character}, {num_bytes} bytes long")
+                character, num_bytes = binary_to_utf8(binary_string)
                 res = res + character
                 binary_string = binary_string[(num_bytes*8):]
-
+            # Si on atteint la fin du fichier, on force la sortie de boucle
+            elif decoded == "EOF":
+                binary_string = ""
             elif decoded is not None:
                 res = res + decoded
     return res
