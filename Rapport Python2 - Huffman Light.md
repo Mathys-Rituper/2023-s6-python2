@@ -8,7 +8,7 @@ Cyberdef 3 - TP6
 
 ## Objectif :
 
-Implémentation de la version "light" de l'algorithme de compression de Huffman.
+On cherche à implémenter en Python l'algorithme de compression de Huffman light : elle se base sur un arbre de Huffman prédéfini, connu et identique chez l'encodeur et le décodeur.
 
 ## Construction de l'arbre :
 
@@ -24,8 +24,6 @@ Pour créer l'arbre, on utilise la méthode `arbre_huffman(frequences)` qui le c
 
 Note : le dictionnaire de fréquences étant incomplet, on réalise deux ajouts : un caractère "NEXIST" qui sera utilisé pour indiquer qu'on va encoder un caractère absent de l'arbre (plus d'explications dans la suite du rapport), et un caractère "EOF" utilisé pour indiquer quand on atteint la fin du fichier (cas où la version compressée du texte est d'une longueur qui n'est pas multiple de 8 bits).
 
-
-
 ## Construction du dictionnaire
 
 La fonction `parcours(arbre,prefixe,dico)` de construction du dictionnaire fonctionne de la manière suivante :
@@ -35,8 +33,6 @@ Pour suivre le cheminement dans l'arbre, on utilise une string de "préfixe" qui
 Ainsi, le préfixe 010 correspond à la node qu'on atteint quand depuis la racine, on va une fois à gauche, puis une fois à droite, puis une fois à gauche.
 
 On va donc venir parcourir tout l'arbre récursivement jusqu'à arriver aux nodes sans éléments à gauche ni à droite, les feuilles qui correspondent aux caractères : à ce moment-là, le préfixe représente l'encodage du caractère de la feuille, on peut donc ajouter le couple (caractère, encodage) au dictionnaire.
-
- 
 
 ## Codage du texte
 
@@ -100,9 +96,7 @@ Ici encore, la majeure difficulté rencontrée a été dans le décodage des car
 
 - On renvoie le caractère en question et la longueur de la représentation binaire de ce dernier (pour pouvoir décaler la tête de lecture)
 
-
-
-## Retour d'expérience
+## Conclusion et retour d'expérience
 
 Les parties "construction de l'arbre" et "construction du dictionnaire" ont été relativement simples à effectuer, en particulier avec l'aide de ChatGPT. 
 
