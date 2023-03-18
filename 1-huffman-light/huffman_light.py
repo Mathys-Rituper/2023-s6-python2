@@ -2,7 +2,7 @@
 ######  Introduction à la cryptographie  	###
 #####   Codes de Huffman             		###
 ####################################################
-
+import os
 from heapq import *
 import binascii
 
@@ -92,6 +92,8 @@ def utf8_to_binarystring(char):
 def encodage(dico,fichier) :
     raw_text = ""
     res = ""
+    filename, file_extension = os.path.splitext(fichier)
+    output_path = filename + ".bin"
 
     with open(fichier,"r",encoding="utf8") as f:
         termine = False
@@ -102,7 +104,7 @@ def encodage(dico,fichier) :
             else:
                 raw_text = raw_text + char
 
-    with open("leHorlaEncoded.txt", "wb") as f:
+    with open(output_path, "wb") as f:
         for char in raw_text:
             if char in dico.keys():
                 res = res + dico[char]
@@ -122,10 +124,11 @@ def encodage(dico,fichier) :
         to_encode.append(n)
 
 
-    with open("encoded.txt", "wb") as f:
+    with open(output_path, "wb") as f:
         f.write(bytes(to_encode))
 
-    return "encoded.txt"
+    print("Encoded")
+
 
 
 ###  Ex.4  décodage d'un fichier compresse
@@ -167,6 +170,8 @@ def binary_to_utf8(binary_str):
 
 def decodage(arbre,fichierCompresse) :
     res = ""
+    filename, file_extension = os.path.splitext(fichierCompresse)
+    output_path = filename + "_decompressed" + ".txt"
     with open(fichierCompresse, "rb") as f:
         file_data = bytes(f.read())
         # Convert byte array to binary string
@@ -196,4 +201,8 @@ def decodage(arbre,fichierCompresse) :
                 binary_string = ""
             elif decoded is not None:
                 res = res + decoded
+
+    with open(output_path,"w+") as f:
+        f.write(res)
+    print("Decompressed")
     return res
