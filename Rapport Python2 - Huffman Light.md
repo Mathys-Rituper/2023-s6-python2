@@ -96,11 +96,29 @@ Ici encore, la majeure difficulté rencontrée a été dans le décodage des car
 
 - On renvoie le caractère en question et la longueur de la représentation binaire de ce dernier (pour pouvoir décaler la tête de lecture)
 
+## Résultats
+
+Comparons sur 4 textes différents les performances de compression :
+
+| Nom                            | Taille sans compression | Taille compressée | Gain d'espace |
+|--------------------------------|-------------------------|-------------------|---------------|
+| Script Bee movie (anglais)     | 53 Ko                   | 48 Ko                  | 9,5%          |
+| Paroles La Retraite (français) | 1,37 Ko                 | 1,01 Ko                  | 27%           |
+| Le Horla (français)            | 0,5 Ko                  | 0.42 Ko                  | 16%           |
+| Tirade d'Otis (français)       | 1,21 Ko                 | 0.82 Ko                  | 34%           |
+
+On remarque que le gain d'espace est le plus important sur les textes en français, et que sur ces derniers, les deux plus longs textes sont aussi ceux sur lesquels la compression a permis de gagner le plus d'espace.
+
+On conclut donc que cette implémentation de l'algorithme de Huffman est la plus pertinente quand on travaille sur des textes en français (car la map des fréquences est spécialement conçue pour la langue française), et que plus les textes sont longs plus la compression permet de gagner de l'espace.
+
+
 ## Conclusion et retour d'expérience
 
 Les parties "construction de l'arbre" et "construction du dictionnaire" ont été relativement simples à effectuer, en particulier avec l'aide de ChatGPT. 
 
 L'essentiel des difficultés s'est concentré sur les deux dernières parties, notamment sur la gestion des longueurs de chaines pour encoder et décoder les caractères hors arbre de Huffman.
+
+Les résultats montrent que bien que la compression ait permis de gagner de la place sur tous les extraits de texte testés, cette implémentation de l'algorithme de Huffman est la plus pertinente quand on cherche à compresser de longs textes dans une langue prédéfinie, et que les apports de cette compression sont moindres quand on est hors de ces cas de figure.
 
 On aurait possiblement pu travailler directement avec des données binaires au décodage sans faire la transposition données binaires brutes du fichier=> chaine binaire pour gagner en performances, mais on aurait perdu en lisibilité et maintenabilité du code,  notamment pour la technique "tête de lecture" qui est plus facile à débugger en mode string qu'en données binaires brutes.
 
